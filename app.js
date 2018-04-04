@@ -12,8 +12,8 @@ const productRouter = require('./api/routers/products');
 const reservationRouter = require('./api/routers/reservations');
 
 //Connecting to MongoDB
-mongoose.connect('mongodb://localhost:27017/XKitchen');
-// mongoose.connect('mongodb://admin:admin123@ds011422.mlab.com:11422/xkitchen')
+// mongoose.connect('mongodb://localhost:27017/XKitchen');
+mongoose.connect('mongodb://admin:12345@ds115579.mlab.com:15579/xkitchen')
 mongoose.Promise = global.Promise;
 
 app.use(bodyParser.urlencoded({extended: false }));

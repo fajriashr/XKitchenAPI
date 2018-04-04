@@ -4,10 +4,11 @@ const mongoose = require('mongoose');
 
 //Product Model
 const Product = require('../models/product');
+const Category = require('../models/category');
 //get all
 router.get('/', (req, res, next) => {
     Product.find()
-        .populate({path:'category', select:'initial name'})
+        .populate('category', 'initial')
         .exec()
         .then(doc => {
             res.status(200).json(doc);
