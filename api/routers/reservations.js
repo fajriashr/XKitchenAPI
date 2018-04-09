@@ -5,7 +5,6 @@ const mongoose = require('mongoose');
 //User Model
 const Reservation = require('../models/reservation');
 const Table = require('../models/table');
-const User = require('../models/user');
 
 //Get all
 router.get('/', (req, res, next) => {
@@ -25,45 +24,36 @@ router.get('/', (req, res, next) => {
 });
 
 //Get all by table
-router.get('/table/', (req, res, next) => {
-    Table.aggregate([
-        { $lookup: { 
-            from: "reservations", 
-            let: { table_id: "$table", bool_paid: "$paid" },
-            pipeline: [
-                { $match:
-                    { $expr:
-                        { $and:
-                            [
-                                { $eq: ["$_id", "$$table_id"] }
-                            ]
-                        }
-                    }
-                },
-                { 
-                    $project: { table: 0, _id: 0, reference: 0, paid: 0 }
-                }
-            ],
-            as: "reserved" }},
-        { $unwind: { path: "$reserved", "preserveNullAndEmptyArrays": true }},
-        { $project: {
-            "code": "$code",
-            "seat": "$seat",
-            "description": "$description",
-            "reference": { $ifNull: ["$reserved.reference", "Null"]},
-            "paid": { $ifNull: ["$reserved.paid", "Null"]}
-            }}])
-        .exec()
-        .then(doc => {
-            res.status(200).json(doc);
-        })
-        .catch(err => {
-            console.log(err);
-            res.status(500).json({
-                error : err
+router.get('/table/:id', (req, res, next) => {
+    var id = req.params.id;
+    //res.status(200).json(req.params.id);
+    GetLatestTable(id, response => {
+        Table.findOne({_id: id})
+            .exec()
+            .then(doc => {
+                res.status(200).json({
+                    table: doc,
+                    reservation: response});
+            }).catch(err => {
+                console.log(err);
+                res.status(500).json({
+                    error : err
+                });
             });
-        });
+    });
 });
+
+function GetLatestTable(tableId, callback){
+    Reservation.findOne({table: tableId})
+        .sort({reference: -1})
+        .exec((err, doc) => {
+            if (doc != null) {
+                return callback(doc);
+            } else {
+                return callback(null);
+            }
+        });
+}
 
 //Insert
 router.post('/', (req, res, next) => {
@@ -111,6 +101,7 @@ function GetNewReference(callback){
     });
 }
 
+
 //Get by (id)
 router.get('/:id', (req, res, next) => {
     console.log("Return form GetNew : ");
@@ -136,15 +127,6 @@ router.get('/:id', (req, res, next) => {
 
 router.patch('/:id', (req, res, next) => {
     const id = req.params.id;
-    // const updateOps = {};
-    // for(const ops of req.body){
-    //     updateOps[ops.propName] = ops.value;
-    // }
-    // console.log('---req.body---')
-    // console.log(req.body);
-    // console.log('---updateOps---')
-    // console.log(updateOps);
-    // console.log('-------')
     Reservation.update({ _id : id }, { $set: req.body })
         .exec()
         .then( result => {
